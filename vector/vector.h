@@ -61,9 +61,9 @@ private:
     void push_back_realloc(T const&);
     void new_buffer(size_t new_capacity);
 
-    void destroy_all(T* vec, size_t size);
-    void copy_construct_all(T* dst, T const* src, size_t size);
-    T* allocate(size_t size);
+    static void destroy_all(T* vec, size_t size);
+    static void copy_construct_all(T* dst, T const* src, size_t size);
+    static T* allocate(size_t size);
 
 private:
     T* data_;
