@@ -68,6 +68,7 @@ private:
     friend big_integer quotient(big_integer const& y, uint32_t k);
     friend void difference(big_integer &r, big_integer const &dq, size_t k, size_t m);
 
+    static uint32_t low32_bits_cast(uint64_t value);
 private:
     bool negative;
     vector<uint32_t> num;
