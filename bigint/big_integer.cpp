@@ -15,7 +15,7 @@ big_integer::big_integer(big_integer const& other) {
 
 big_integer::big_integer(int a) {
     negative = a < 0;
-    num.push_back(std::abs(a));
+    num.push_back((uint32_t) a);
     shrink();
 }
 
