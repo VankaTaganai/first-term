@@ -141,7 +141,7 @@ big_integer quotient(big_integer const& y, uint32_t k) {
     x.expand(y.length());
     for (int32_t i = y.length() - 1; i >= 0; i--) {
         uint64_t tmp = (carry << 32u) + y.get_byte(i);
-        x.num[i] = (uint32_t)(tmp / k);
+        x.num[i] = static_cast<uint32_t>(tmp / k);
         carry = tmp % k;
     }
     x.shrink();
@@ -167,7 +167,7 @@ big_integer& big_integer::operator/=(big_integer const& rhs) {
     }
 
     big_integer dq;
-    uint32_t f = (static_cast<uint64_t>(UINT32_MAX) + 1) / (uint64_t(divr.num.back()) + 1);
+    uint32_t f = (static_cast<uint64_t>(UINT32_MAX) + 1) / (static_cast<uint64_t>(divr.num.back()) + 1);
     divs *= f;
     divr *= f;
 
