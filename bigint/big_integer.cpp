@@ -15,7 +15,7 @@ big_integer::big_integer(big_integer const& other) {
 
 big_integer::big_integer(int a) {
     negative = a < 0;
-    num.push_back(a);
+    num.push_back(std::abs(a));
     shrink();
 }
 
@@ -28,7 +28,7 @@ big_integer::big_integer(uint32_t a) {
 big_integer::big_integer(std::string const& str) {
     bool number = str.empty() ? false : (str[0] == '-' && str.size() > 1) || ('0' <= str[0] && str[0] <= '9');
     for (size_t i = 1; i < str.size(); i++) {
-        number = ('0' <= str[i] && str[i] <= '9');
+        number &= ('0' <= str[i] && str[i] <= '9');
     }
     if (!number) {
         throw std::runtime_error("Incorrect string format");
@@ -57,8 +57,7 @@ big_integer& big_integer::operator=(big_integer const& other) {
     }
 
     big_integer tmp(other);
-    std::swap(negative, tmp.negative);
-    std::swap(num, tmp.num);
+    swap(tmp);
 
     return *this;
 }
@@ -427,6 +426,11 @@ std::string to_string(big_integer const& a) {
     return res;
 }
 
+void big_integer::swap(big_integer& other) {
+    std::swap(negative, other.negative);
+    std::swap(num, other.num);
+}
+
 std::ostream& operator<<(std::ostream& s, big_integer const& a) {
     return s << to_string(a);
 }
@@ -462,8 +466,5 @@ uint32_t big_integer::get_byte(size_t i) const {
     if (i < length()) {
         return num[i];
     }
-    if (negative) {
-        return UINT32_MAX;
-    }
-    return 0;
+    return negative ? UINT32_MAX : 0;
 }

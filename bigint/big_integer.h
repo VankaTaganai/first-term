@@ -48,6 +48,8 @@ struct big_integer {
 
     friend std::string to_string(big_integer const& a);
 
+    void swap(big_integer& other);
+
 private:
     size_t length() const;
 
