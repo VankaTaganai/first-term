@@ -131,7 +131,7 @@ void difference(big_integer &r, const big_integer &dq, size_t k, size_t m) {
     for (size_t i = 0; i <= m; i++) {
         uint64_t diff = (static_cast<uint64_t>(r.get_byte(start + i)) - dq.get_byte(i) - borrow);
         borrow = (r.get_byte(start + i) < dq.get_byte(i) + borrow);
-        r.num[start + i] = (uint32_t) diff;
+        r.num[start + i] = static_cast<uint32_t>(diff);
     }
 }
 
