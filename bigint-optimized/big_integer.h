@@ -2,7 +2,6 @@
 #define BIG_INTEGER_H
 
 #include <cstddef>
-#include <gmp.h>
 #include <iosfwd>
 #include <cstdint>
 #include "uint_vector.h"
@@ -49,20 +48,30 @@ struct big_integer {
 
     friend std::string to_string(big_integer const& a);
 
+    void swap(big_integer& other);
+
+private:
+    size_t length() const;
+
+    big_integer abs() const;
+
+    void expand(size_t len);
+
+    big_integer binpow2(size_t n);
+
+    uint32_t get_byte(size_t i) const;
+
+    void shrink();
+
+    static uint32_t trial(__uint128_t a, __uint128_t b, __uint128_t c, __uint128_t d, __uint128_t e);
+    static bool smaller(big_integer const &r, big_integer const &dq, size_t k, size_t m);
+    static big_integer quotient(big_integer const& y, uint32_t k);
+    static void difference(big_integer &r, big_integer const &dq, size_t k, size_t m);
+
+    static uint32_t low32_bits_cast(uint64_t value);
 private:
     bool negative;
     uint_vector num;
-
-    size_t length() const;
-    big_integer abs() const;
-    void expand(size_t len);
-    big_integer binpow2(size_t n);
-    uint32_t get_byte(size_t i) const;
-    void shrink();
-    friend uint32_t trial(__uint128_t a, __uint128_t b, __uint128_t c, __uint128_t d, __uint128_t e);
-    friend bool smaller(big_integer const &r, big_integer const &dq, size_t k, size_t m);
-    friend big_integer quotient(big_integer const& y, uint32_t k);
-    void difference(big_integer &r, big_integer const &dq, size_t k, size_t m);
 };
 
 big_integer operator+(big_integer a, big_integer const& b);

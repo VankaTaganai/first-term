@@ -6,7 +6,6 @@
 
 big_integer::big_integer() {
     negative = false;
-    num = uint_vector();
 }
 
 big_integer::big_integer(big_integer const& other) {
@@ -16,14 +15,12 @@ big_integer::big_integer(big_integer const& other) {
 
 big_integer::big_integer(int a) {
     negative = a < 0;
-    num = uint_vector();
-    num.push_back(a);
+    num.push_back(*reinterpret_cast<uint32_t*>(&a));
     shrink();
 }
 
 big_integer::big_integer(uint32_t a) {
     negative = false;
-    num = uint_vector();
     num.push_back(a);
     shrink();
 }
@@ -31,7 +28,7 @@ big_integer::big_integer(uint32_t a) {
 big_integer::big_integer(std::string const& str) {
     bool number = str.empty() ? false : (str[0] == '-' && str.size() > 1) || ('0' <= str[0] && str[0] <= '9');
     for (size_t i = 1; i < str.size(); i++) {
-        number = ('0' <= str[i] && str[i] <= '9');
+        number &= ('0' <= str[i] && str[i] <= '9');
     }
     if (!number) {
         throw std::runtime_error("Incorrect string format");
@@ -60,8 +57,7 @@ big_integer& big_integer::operator=(big_integer const& other) {
     }
 
     big_integer tmp(other);
-    std::swap(negative, tmp.negative);
-    num.swap(tmp.num);
+    swap(tmp);
 
     return *this;
 }
@@ -71,7 +67,7 @@ big_integer& big_integer::operator+=(big_integer const& rhs) {
     expand(std::max(length(), rhs.length()) + 1);
     for (size_t i = 0; i < length(); i++) {
         carry = carry + get_byte(i) + rhs.get_byte(i);
-        num[i] = uint32_t(carry);
+        num[i] = low32_bits_cast(carry);
         carry >>= 32u;
     }
 
@@ -100,8 +96,8 @@ big_integer& big_integer::operator*=(big_integer const& rhs) {
         uint64_t carry = 0;
         for (size_t j = 0; j < a.length() || carry != 0; j++) {
             size_t index = i + j;
-            carry += (uint64_t)b.num[i] * (j < a.length() ? a.num[j] : 0) + num[index];
-            num[index] = (uint32_t)carry;
+            carry += static_cast<uint64_t>(b.num[i]) * (j < a.length() ? a.num[j] : 0) + num[index];
+            num[index] = low32_bits_cast(carry);
             carry >>= 32u;
         }
     }
@@ -114,13 +110,13 @@ big_integer& big_integer::operator*=(big_integer const& rhs) {
     return *this;
 }
 
-uint32_t trial(__uint128_t a, __uint128_t b, __uint128_t c, __uint128_t d, __uint128_t e) {
+uint32_t big_integer::trial(__uint128_t a, __uint128_t b, __uint128_t c, __uint128_t d, __uint128_t e) {
     __uint128_t x = (((a << 32u) + b) << 32u) + c;
     __uint128_t y = (d << 32u) + e;
-    return std::min((uint32_t)(x / y), UINT32_MAX);
+    return static_cast<uint32_t>(std::min(x / y, static_cast<__uint128_t>UINT32_MAX));
 }
 
-bool smaller(big_integer const &r, big_integer const &dq, size_t k, size_t m) {
+bool big_integer::smaller(big_integer const &r, big_integer const &dq, size_t k, size_t m) {
     for (size_t i = 0; i <= m; i++) {
         if (r.get_byte(m + k - i) != dq.get_byte(m - i)) {
             return r.get_byte(m + k - i) < dq.get_byte(m - i);
@@ -133,19 +129,19 @@ void big_integer::difference(big_integer &r, const big_integer &dq, size_t k, si
     uint32_t borrow = 0;
     size_t start = k;
     for (size_t i = 0; i <= m; i++) {
-        uint64_t diff = ((int64_t) r.get_byte(start + i) - dq.get_byte(i) - borrow);
+        uint64_t diff = (static_cast<uint64_t>(r.get_byte(start + i)) - dq.get_byte(i) - borrow);
         borrow = (r.get_byte(start + i) < dq.get_byte(i) + borrow);
-        r.num[start + i] = (uint32_t) diff;
+        r.num[start + i] = low32_bits_cast(diff);
     }
 }
 
-big_integer quotient(big_integer const& y, uint32_t k) {
+big_integer big_integer::quotient(big_integer const& y, uint32_t k) {
     uint64_t carry = 0;
     big_integer x;
     x.expand(y.length());
     for (int32_t i = y.length() - 1; i >= 0; i--) {
         uint64_t tmp = (carry << 32u) + y.get_byte(i);
-        x.num[i] = (uint32_t)(tmp / k);
+        x.num[i] = low32_bits_cast(tmp / k);
         carry = tmp % k;
     }
     x.shrink();
@@ -171,7 +167,8 @@ big_integer& big_integer::operator/=(big_integer const& rhs) {
     }
 
     big_integer dq;
-    uint32_t f = (uint64_t(UINT32_MAX) + 1) / (uint64_t(divr.num.back()) + 1);
+    uint32_t f = low32_bits_cast((static_cast<uint64_t>(UINT32_MAX) + 1)
+                                 / (static_cast<uint64_t>(divr.num.back()) + 1));
     divs *= f;
     divr *= f;
 
@@ -184,7 +181,7 @@ big_integer& big_integer::operator/=(big_integer const& rhs) {
 
     for (int32_t k = n - m - 1; k >= 0; k--) {
         uint32_t qt = trial(divs.num[m + k], divs.num[m + k - 1],
-                divs.num[m + k - 2], divr.num[m - 1], divr.num[m - 2]);
+                            divs.num[m + k - 2], divr.num[m - 1], divr.num[m - 2]);
         dq = divr * qt;
         if (smaller(divs, dq, k, m)) {
             qt--;
@@ -192,6 +189,9 @@ big_integer& big_integer::operator/=(big_integer const& rhs) {
         }
         num[k] = qt;
         difference(divs, dq, k, m);
+        if (divs.num.back() == 0) {
+            divs.num.pop_back();
+        }
     }
 
     shrink();
@@ -427,6 +427,11 @@ std::string to_string(big_integer const& a) {
     return res;
 }
 
+void big_integer::swap(big_integer& other) {
+    std::swap(negative, other.negative);
+    std::swap(num, other.num);
+}
+
 std::ostream& operator<<(std::ostream& s, big_integer const& a) {
     return s << to_string(a);
 }
@@ -462,8 +467,9 @@ uint32_t big_integer::get_byte(size_t i) const {
     if (i < length()) {
         return num[i];
     }
-    if (negative) {
-        return UINT32_MAX;
-    }
-    return 0;
+    return negative ? UINT32_MAX : 0;
+}
+
+uint32_t big_integer::low32_bits_cast(uint64_t value) {
+    return static_cast<uint32_t>(value & UINT32_MAX);
 }
