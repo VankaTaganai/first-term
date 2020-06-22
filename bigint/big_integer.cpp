@@ -110,13 +110,13 @@ big_integer& big_integer::operator*=(big_integer const& rhs) {
     return *this;
 }
 
-uint32_t trial(__uint128_t a, __uint128_t b, __uint128_t c, __uint128_t d, __uint128_t e) {
+uint32_t big_integer::trial(__uint128_t a, __uint128_t b, __uint128_t c, __uint128_t d, __uint128_t e) {
     __uint128_t x = (((a << 32u) + b) << 32u) + c;
     __uint128_t y = (d << 32u) + e;
     return static_cast<uint32_t>(std::min(x / y, static_cast<__uint128_t>UINT32_MAX));
 }
 
-bool smaller(big_integer const &r, big_integer const &dq, size_t k, size_t m) {
+bool big_integer::smaller(big_integer const &r, big_integer const &dq, size_t k, size_t m) {
     for (size_t i = 0; i <= m; i++) {
         if (r.get_byte(m + k - i) != dq.get_byte(m - i)) {
             return r.get_byte(m + k - i) < dq.get_byte(m - i);
@@ -125,23 +125,23 @@ bool smaller(big_integer const &r, big_integer const &dq, size_t k, size_t m) {
     return false;
 }
 
-void difference(big_integer &r, const big_integer &dq, size_t k, size_t m) {
+void big_integer::difference(big_integer &r, const big_integer &dq, size_t k, size_t m) {
     uint32_t borrow = 0;
     size_t start = k;
     for (size_t i = 0; i <= m; i++) {
         uint64_t diff = (static_cast<uint64_t>(r.get_byte(start + i)) - dq.get_byte(i) - borrow);
         borrow = (r.get_byte(start + i) < dq.get_byte(i) + borrow);
-        r.num[start + i] = big_integer::low32_bits_cast(diff);
+        r.num[start + i] = low32_bits_cast(diff);
     }
 }
 
-big_integer quotient(big_integer const& y, uint32_t k) {
+big_integer big_integer::quotient(big_integer const& y, uint32_t k) {
     uint64_t carry = 0;
     big_integer x;
     x.expand(y.length());
     for (int32_t i = y.length() - 1; i >= 0; i--) {
         uint64_t tmp = (carry << 32u) + y.get_byte(i);
-        x.num[i] = big_integer::low32_bits_cast(tmp / k);
+        x.num[i] = low32_bits_cast(tmp / k);
         carry = tmp % k;
     }
     x.shrink();
