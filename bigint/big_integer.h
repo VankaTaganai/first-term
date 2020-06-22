@@ -63,10 +63,10 @@ private:
 
     void shrink();
 
-    friend uint32_t trial(__uint128_t a, __uint128_t b, __uint128_t c, __uint128_t d, __uint128_t e);
-    friend bool smaller(big_integer const &r, big_integer const &dq, size_t k, size_t m);
-    friend big_integer quotient(big_integer const& y, uint32_t k);
-    friend void difference(big_integer &r, big_integer const &dq, size_t k, size_t m);
+    static uint32_t trial(__uint128_t a, __uint128_t b, __uint128_t c, __uint128_t d, __uint128_t e);
+    static bool smaller(big_integer const &r, big_integer const &dq, size_t k, size_t m);
+    static big_integer quotient(big_integer const& y, uint32_t k);
+    static void difference(big_integer &r, big_integer const &dq, size_t k, size_t m);
 
     static uint32_t low32_bits_cast(uint64_t value);
 private:
