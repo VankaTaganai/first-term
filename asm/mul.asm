@@ -12,7 +12,6 @@ _start:
                 lea             rsi, [rsp + 3 * 128 * 8]
 
                 call            mul_long_long
-                sub             rdi, 2 * 128 * 8
                 call            write_long
 
                 mov             al, 0x0a
@@ -23,17 +22,18 @@ _start:
 ; multiply two long numbers
 ;    rdi -- address of argument #1 (long number)
 ;    rsi -- address of argument #2 (long number)
-;    rcx -- length of long numbers in qwords
+;    rcx -- length of arguments in qwords
 ; result:
 ;    multiply is written to rdi
 mul_long_long:
                 push            rdi
                 
-                sub             rdi, 128 * 8
+                mov             rcx, 256
+                lea             rdi, [rdi - 2 * 128 * 8]
                 call            set_zero
-                sub             rdi, 128 * 8
-                call            set_zero
-                add             rdi, 2 * 128 * 8
+                mov             rcx, 128
+
+                lea             rdi, [rdi + 2 * 128 * 8]
                 lea             rbx, [rdi - 2 * 128 * 8]
                 mov             r8, rbx
                 
@@ -50,7 +50,6 @@ mul_long_long:
 
                 add             [rbx], rdx
                 adc             r11, 0
-                xor             rdx, rdx
 
                 mov             rax, [rdi]
                 mov             rdx, [r9]
@@ -73,11 +72,10 @@ mul_long_long:
                 dec             rcx
                 jnz             .shift
 
-                sub             rbx, 2 * 128 * 8
                 mov             rcx, 256
 
-                mov             rdi, rbx
                 pop             rdi
+                sub             rdi, 2 * 128 * 8
                 ret
 
 ; adds 64-bit number to long number
